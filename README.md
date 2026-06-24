@@ -1,6 +1,6 @@
 # Canon & Compass
 
-Live site: `https://canonandcompass.com`
+Live site: `https://www.canonandcompass.com`
 
 This repository is a curated public case study for Canon & Compass, a custom Astro publishing site I designed and built. The live project is content-rich and structurally opinionated, but this repo is intentionally selective: it shares representative implementation and architecture decisions without reproducing the full editorial body of work.
 
