@@ -1,0 +1,131 @@
+---
+import type { CollectionEntry } from "astro:content";
+import PageLayout from "@layouts/PageLayout.astro";
+import TopLayout from "@layouts/TopLayout.astro";
+import BottomLayout from "@layouts/BottomLayout.astro";
+import FruitPathForestLinks from "@components/FruitPathForestLinks.astro";
+
+type Props = {
+  entry: CollectionEntry<"fruit-path">;
+  backHref?: string;
+  backLabel?: string;
+};
+
+const {
+  entry,
+  backHref = "/fruit-path",
+  backLabel = "Fruit Paths",
+} = Astro.props as Props;
+
+const data = entry?.data;
+const shiftData = data?.shift;
+const treeData = data?.tree;
+
+const treeTitle = treeData?.title ?? data?.title;
+const treeSummary = treeData?.summary ?? data?.summary;
+
+const pathwayLabel = data?.label;
+const fallbackLabel = shiftData
+  ? `${shiftData.fruit ?? shiftData.title} <-> ${treeTitle ?? "Truth"}`
+  : treeTitle ?? "Fruit Path";
+
+const title = pathwayLabel ?? fallbackLabel;
+const description =
+  shiftData?.description ??
+  treeSummary ??
+  "Name the fruit, trace the root, and return to Christ in truthful obedience.";
+const articleTags = Array.from(
+  new Set([...(data?.tags ?? []), ...(shiftData?.tags ?? [])]),
+);
+
+const { Content } = await entry.render();
+const pathwayId = data?.pathwayId ?? entry.slug;
+---
+
+<PageLayout
+  title={title}
+  description={description}
+  pageType="article"
+  schemaType="Article"
+  publishedTime={data?.date}
+  section="Fruit Paths"
+  tags={articleTags}
+>
+  <TopLayout>
+    <div class="animate">
+      <a
+        href={backHref}
+        class="group flex w-fit items-center gap-1.5 rounded border border-ash/20 p-1.5 text-sm transition-colors duration-300 ease-in-out hover:border-ember/50 hover:bg-ember/10 hover:text-ink dark:border-bone/15 dark:hover:bg-ember/10 dark:hover:text-bone"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="stroke-current"
+        >
+          <line
+            x1="19"
+            y1="12"
+            x2="5"
+            y2="12"
+            class="scale-x-0 group-hover:scale-x-100 translate-x-3 group-hover:translate-x-0 transition-all duration-300 ease-in-out"
+          />
+          <polyline
+            points="12 19 5 12 12 5"
+            class="translate-x-1 group-hover:translate-x-0 transition-all duration-300 ease-in-out"
+          />
+        </svg>
+        <div class="w-full transition-colors duration-300 ease-in-out">
+          Back to {backLabel}
+        </div>
+      </a>
+
+      <div class="mt-10">
+        <div class="text-xs uppercase tracking-[0.2em] text-ember">Fruit Path</div>
+        <h1 class="mt-3 text-3xl font-semibold text-ink dark:text-bone">
+          {title}
+        </h1>
+        {description && (
+          <p class="mt-2 max-w-prose text-balance text-lg text-ash dark:text-zinc-400">
+            {description}
+          </p>
+        )}
+
+        {shiftData?.systemLabel && (
+          <div class="mt-4 inline-flex items-center gap-2 text-xs uppercase tracking-wide text-ash dark:text-zinc-300">
+            <span class="rounded-full border border-ember/40 px-2 py-1 text-ink dark:text-bone">System</span>
+            <span>{shiftData.systemLabel}</span>
+          </div>
+        )}
+
+        <div class="mt-5 flex flex-wrap gap-2 text-xs uppercase tracking-[0.18em]">
+          <span class="rounded-full border border-ember/30 bg-ember/10 px-3 py-1 text-ink dark:border-ember/25 dark:bg-ember/10 dark:text-bone">
+            Name the fruit
+          </span>
+          <span class="rounded-full border border-moss/30 bg-moss/10 px-3 py-1 text-ink dark:border-moss/25 dark:bg-moss/10 dark:text-bone">
+            Return to the root
+          </span>
+        </div>
+      </div>
+    </div>
+  </TopLayout>
+
+  <BottomLayout>
+    <div class="animate">
+      <article class="mt-6 border-t border-ember/20 pt-6 dark:border-ember/20">
+        {Content ? <Content /> : null}
+      </article>
+
+      {pathwayId && (
+        <div class="mt-10 space-y-6">
+          <FruitPathForestLinks pathwayId={pathwayId} />
+        </div>
+      )}
+    </div>
+  </BottomLayout>
+</PageLayout>

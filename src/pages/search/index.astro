@@ -1,0 +1,53 @@
+---
+import { type CollectionEntry, getCollection } from "astro:content";
+import PageLayout from "@layouts/PageLayout.astro";
+import TopLayout from "@layouts/TopLayout.astro";
+import BottomLayout from "@layouts/BottomLayout.astro";
+import Search from "@components/Search";
+import { SEARCH } from "@consts";
+import { isForestPathEntry } from "@lib/content";
+import { toCardEntry } from "@lib/cardEntries";
+
+const posts = (await getCollection("fruit-path")).filter(
+  (post) => !post.data.draft,
+);
+
+const clearing = (await getCollection("the-clearing")).filter(
+  (entry) => !entry.data.draft,
+);
+
+const forests = (await getCollection("forests")).filter(
+  (post) => isForestPathEntry(post) && !post.data.draft,
+);
+
+const discernmentEntries = (await getCollection("foundations-of-discernment")).filter(
+  (post) => !post.data.draft,
+);
+
+const data = [...posts, ...clearing, ...forests, ...discernmentEntries] as CollectionEntry<
+  | "fruit-path"
+  | "the-clearing"
+  | "forests"
+  | "foundations-of-discernment"
+>[];
+
+const cardData = data.map((entry) => toCardEntry(entry));
+---
+
+<PageLayout
+  title={SEARCH.TITLE}
+  description={SEARCH.DESCRIPTION}
+  schemaType="SearchResultsPage"
+  section="Search"
+>
+  <TopLayout>
+    <div class="animate page-heading">
+      {SEARCH.TITLE}
+    </div>
+  </TopLayout>
+  <BottomLayout>
+    <div class="animate">
+      <Search client:load data={cardData} />
+    </div>
+  </BottomLayout>
+</PageLayout>

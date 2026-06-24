@@ -1,0 +1,142 @@
+import { defineCollection, z } from "astro:content"
+
+const fruitPath = defineCollection({
+  type: "content",
+  schema: z.object({
+    // Truth Tree details (top-level for search/RSS/listing compatibility)
+    title: z.string(),
+    summary: z.string(),
+    date: z.coerce.date(),
+    tags: z.array(z.string()),
+
+    // Optional overall pathway label
+    label: z.string().optional(),
+
+    // Optional ID for internal links (defaults to slug)
+    pathwayId: z.string().optional(),
+
+    // Optional draft flag
+    draft: z.boolean().optional(),
+
+    // Symptom / Tree Shift
+    shift: z.object({
+      title: z.string(),
+      description: z.string(),
+      fruit: z.string(),
+      blurb: z.string(),
+      systemLabel: z.string(),
+      tags: z.array(z.string()),
+      date: z.coerce.date(),
+      slug: z.string().optional(),
+      href: z.string().optional(),
+    }),
+
+    // Truth Tree (optional details for pathway linking)
+    tree: z
+      .object({
+        title: z.string().optional(),
+        summary: z.string().optional(),
+        tags: z.array(z.string()).optional(),
+        date: z.coerce.date().optional(),
+        slug: z.string().optional(),
+        href: z.string().optional(),
+      })
+      .optional(),
+
+    // Counterfeit/False Tree (optional placeholder for future)
+    counterfeitTree: z
+      .object({
+        title: z.string().optional(),
+        slug: z.string().optional(),
+        href: z.string().optional(),
+      })
+      .optional(),
+
+  }),
+})
+
+const foundationsOfDiscernment = defineCollection({
+  type: "content",
+  schema: z.object({
+    title: z.string(),
+    summary: z.string(),
+    date: z.coerce.date(),
+    series: z.string(),
+    day: z.number().optional(),
+    tags: z.array(z.string()),
+    draft: z.boolean().optional(),
+    prevHref: z.string().optional(),
+    prevLabel: z.string().optional(),
+    nextHref: z.string().optional(),
+    nextLabel: z.string().optional(),
+  }),
+})
+
+const forests = defineCollection({
+  type: "content",
+  schema: z.union([
+    z.object({
+      type: z.literal("forest"),
+      title: z.string(),
+      subtitle: z.string(),
+      summary: z.string(),
+      series: z.string(),
+      relatedPathways: z.array(z.string()).optional(),
+      climate: z.string(),
+      canopy: z.array(z.string()),
+      quietGospel: z.string(),
+      fruit: z.array(z.string()),
+      costStaying: z.string(),
+      costLeaving: z.string(),
+      pathIntro: z.string(),
+      orientation: z.string(),
+      orientationLink: z
+        .object({
+          label: z.string(),
+          href: z.string(),
+        })
+        .optional(),
+      draft: z.boolean().optional(),
+    }),
+    z.object({
+      type: z.literal("entry").optional(),
+      title: z.string(),
+      summary: z.string(),
+      date: z.coerce.date(),
+      series: z.string(),
+      part: z.number().optional(),
+      seriesSummary: z.string().optional(),
+      tags: z.array(z.string()),
+      pathwayId: z.string().optional(),
+      prevHref: z.string().optional(),
+      prevLabel: z.string().optional(),
+      nextHref: z.string().optional(),
+      nextLabel: z.string().optional(),
+      draft: z.boolean().optional(),
+    }),
+  ]),
+})
+
+const theClearing = defineCollection({
+  type: "content",
+  schema: z.object({
+    title: z.string(),
+    summary: z.string(),
+    date: z.coerce.date(),
+    tags: z.array(z.string()),
+    pathwayId: z.string().optional(),
+    draft: z.boolean().optional(),
+    prevHref: z.string().optional(),
+    prevLabel: z.string().optional(),
+    nextHref: z.string().optional(),
+    nextLabel: z.string().optional(),
+  }),
+})
+
+
+export const collections = {
+  "fruit-path": fruitPath,
+  forests,
+  'the-clearing': theClearing,
+  "foundations-of-discernment": foundationsOfDiscernment,
+}
