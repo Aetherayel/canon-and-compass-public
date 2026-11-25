@@ -1,4 +1,5 @@
 import type { CollectionEntry } from "astro:content";
+import { isPublished } from "@lib/publication";
 
 export type ForestEntry = CollectionEntry<"forests">;
 export type ForestOverviewEntry = ForestEntry & {
@@ -8,10 +9,13 @@ export type ForestPathEntry = ForestEntry & {
   data: Exclude<ForestEntry["data"], { type: "forest" }>;
 };
 export type FruitPathEntry = CollectionEntry<"fruit-path">;
+export type FruitPathLegacySource = "canonNotes" | "compassPoints" | "pillars";
 
 export type ArticleEntry =
   | CollectionEntry<"foundations-of-discernment">
   | CollectionEntry<"the-clearing">
+  | CollectionEntry<"bearings">
+  | CollectionEntry<"compass-points">
   | ForestPathEntry;
 
 export function isForestOverview(entry: ForestEntry): entry is ForestOverviewEntry {
@@ -26,19 +30,37 @@ export function getPathwayId(entry: FruitPathEntry) {
   return entry.data.pathwayId ?? entry.slug;
 }
 
+export function getFruitPathHref(entry: FruitPathEntry) {
+  return `/fruit-path/${getPathwayId(entry)}`;
+}
+
 export async function getPublishedForestOverviews() {
   const { getCollection } = await import("astro:content");
   const forests = await getCollection("forests");
   return forests.filter(
     (entry): entry is ForestOverviewEntry =>
-      isForestOverview(entry) && !entry.data.draft,
+      isForestOverview(entry) && isPublished(entry),
   );
 }
 
 export async function getPublishedFruitPaths() {
   const { getCollection } = await import("astro:content");
   const pathways = await getCollection("fruit-path");
-  return pathways.filter((entry) => !entry.data.draft);
+  return pathways.filter(isPublished);
+}
+
+export async function getLegacyFruitPathHref(
+  source: FruitPathLegacySource,
+  slug?: string,
+) {
+  if (!slug) return "/fruit-path";
+
+  const pathways = await getPublishedFruitPaths();
+  const match = pathways.find((entry) =>
+    entry.data.legacy?.[source]?.includes(slug),
+  );
+
+  return match ? getFruitPathHref(match) : "/fruit-path";
 }
 
 export async function getRelatedPathwaysForForest({
@@ -77,4 +99,17 @@ export async function getRelatedForestsForPathway(pathwayId: string) {
   return forests.filter((entry) =>
     entry.data.relatedPathways?.includes(pathwayId),
   );
+}
+
+/** Compass Points can illuminate several Forests, but have one canonical home. */
+export async function getPublishedCompassPointsForForest(forestSlug: string) {
+  const { getCompassPoints } = await import("@lib/compassPoints");
+  const points = await getCompassPoints();
+  return points
+    .filter(isPublished)
+    .filter((entry) =>
+      entry.data.primaryForest === forestSlug ||
+      entry.data.relatedForests?.includes(forestSlug),
+    )
+    .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
 }

@@ -1,0 +1,302 @@
+---
+import ForestFruitPathLinks from "@components/ForestFruitPathLinks.astro";
+import type { ForestOverviewEntry, ForestPathEntry } from "@lib/content";
+
+interface Props {
+  forest: ForestOverviewEntry;
+  seriesEntries: ForestPathEntry[];
+  isSeriesComingSoon: boolean;
+}
+
+const { forest, seriesEntries, isSeriesComingSoon } = Astro.props;
+const atlas = forest.data.atlas!;
+
+const landmarks = [
+  { id: "threshold", title: "The Threshold", question: "Explore this landmark.", x: 12, y: 77 },
+  { id: "climate", title: "The Climate", question: "Explore this landmark.", x: 33, y: 51 },
+  { id: "trails", title: "The Trails", question: "Explore this landmark.", x: 52, y: 77 },
+  { id: "canopy", title: "The Canopy", question: "Explore this landmark.", x: 60, y: 25 },
+  { id: "edge", title: "The Edge", question: "Explore this landmark.", x: 81, y: 59 },
+  { id: "beyond", title: "The Wider World", question: "Explore this landmark.", x: 88, y: 19 },
+] as const;
+
+const paragraphs = (value: string) =>
+  value.split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean);
+
+const scene = atlas.image ?? "/example-atlas.svg";
+const inputPrefix = `atlas-${forest.slug}`;
+---
+
+<div class="animate space-y-12">
+  <section aria-labelledby="atlas-intro-heading" class="space-y-3">
+    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-ash dark:text-neutral-400">
+      A Forest Field Guide
+    </p>
+    <h2 id="atlas-intro-heading" class="text-2xl font-semibold text-ink dark:text-bone">
+      Reading the landscape
+    </h2>
+    <p class="max-w-2xl text-base leading-relaxed text-ash dark:text-neutral-300">
+      Select a landmark to read its associated sample content.
+    </p>
+  </section>
+
+  <section aria-labelledby="atlas-quiet-gospel-heading" class="space-y-3 border-y border-ash/20 py-6 dark:border-bone/15">
+    <h2 id="atlas-quiet-gospel-heading" class="text-xs font-semibold uppercase tracking-[0.18em] text-pine dark:text-moss">
+      The Quiet Gospel
+    </h2>
+    <blockquote class="max-w-2xl border-l-2 border-ash/45 pl-4 text-xl font-medium leading-relaxed text-ink dark:border-bone/30 dark:text-bone sm:text-2xl">
+      “{forest.data.quietGospel}”
+    </blockquote>
+    <p class="max-w-2xl text-sm leading-relaxed text-ash dark:text-neutral-300">
+      This summary is supplied by collection metadata.
+    </p>
+  </section>
+
+  <section aria-labelledby="atlas-landmarks-heading" class="space-y-4">
+    <div class="space-y-1">
+      <h2 id="atlas-landmarks-heading" class="text-xl font-semibold text-ink dark:text-bone">
+        Explore the landmarks
+      </h2>
+      <p id={`${inputPrefix}-instructions`} class="text-sm text-ash dark:text-neutral-300">
+        Choose a marker to explore that part of the Forest. Hover to preview, tap to select.
+        On a keyboard, use Tab and the arrow keys to choose a marker.
+      </p>
+    </div>
+
+    <fieldset class="atlas-widget relative min-w-0" aria-describedby={`${inputPrefix}-instructions`}>
+      <legend class="sr-only">Choose a landmark in the Forest</legend>
+      {landmarks.map((landmark, index) => (
+        <input
+          class="atlas-choice"
+          type="radio"
+          name={`${inputPrefix}-landmark`}
+          id={`${inputPrefix}-${landmark.id}`}
+          checked={index === 0}
+        />
+      ))}
+
+      <div class="atlas-stage grid items-start gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+        <div class="atlas-scene relative isolate aspect-[1672/941] overflow-hidden rounded-xl border border-pine/20 bg-bone dark:border-moss/30 dark:bg-zinc-900">
+          <img
+            src={scene}
+            alt="Placeholder landscape for the six-marker example."
+            width="1672"
+            height="941"
+            loading="eager"
+            decoding="async"
+            class="pointer-events-none h-full w-full object-cover"
+          />
+          {landmarks.map((landmark, index) => (
+            <label
+              for={`${inputPrefix}-${landmark.id}`}
+              class="atlas-marker"
+              style={`left:${atlas.markers?.[landmark.id]?.x ?? landmark.x}%;top:${atlas.markers?.[landmark.id]?.y ?? landmark.y}%;`}
+            >
+              <span class="atlas-marker-number">{index + 1}</span>
+              <span class="atlas-marker-name" aria-hidden="true">{landmark.title}</span>
+              <span class="sr-only">{landmark.title}</span>
+            </label>
+          ))}
+        </div>
+
+        <div class="atlas-copy min-w-0 rounded-xl border border-ash/20 bg-paper p-5 dark:border-bone/15 dark:bg-zinc-900/50 sm:p-6">
+          {landmarks.map((landmark, index) => (
+            <section class="atlas-observation" aria-labelledby={`${inputPrefix}-heading-${landmark.id}`}>
+              <p class="text-xs font-semibold uppercase tracking-[0.17em] text-pine dark:text-moss">
+                Observation {String(index + 1).padStart(2, "0")} / 06
+              </p>
+              <h3 id={`${inputPrefix}-heading-${landmark.id}`} class="mt-2 text-xl font-semibold text-ink dark:text-bone">
+                {landmark.title}
+              </h3>
+              <p class="mt-1 text-sm italic text-ash dark:text-neutral-400">{landmark.question}</p>
+              <div class="mt-5 space-y-3 text-base leading-relaxed text-ash dark:text-neutral-300">
+                {landmark.id === "threshold" && paragraphs(atlas.threshold).map((paragraph) => <p>{paragraph}</p>)}
+
+                {landmark.id === "climate" && paragraphs(forest.data.climate).map((paragraph) => <p>{paragraph}</p>)}
+
+                {landmark.id === "trails" && paragraphs(atlas.trails).map((paragraph) => <p>{paragraph}</p>)}
+
+                {landmark.id === "canopy" && (
+                  <>
+                    <p>Example observations:</p>
+                    <ul class="list-disc space-y-2 pl-5">
+                      {forest.data.canopy.map((item) => <li>{item.charAt(0).toUpperCase() + item.slice(1)}</li>)}
+                    </ul>
+                  </>
+                )}
+
+                {landmark.id === "edge" && (
+                  <>
+                    {paragraphs(atlas.edge).map((paragraph) => <p>{paragraph}</p>)}
+                    <h4 class="pt-2 font-semibold text-ink dark:text-bone">The cost of remaining</h4>
+                    {paragraphs(forest.data.costStaying).map((paragraph) => <p>{paragraph}</p>)}
+                  </>
+                )}
+
+                {landmark.id === "beyond" && (
+                  <>
+                    {paragraphs(atlas.beyond).map((paragraph) => <p>{paragraph}</p>)}
+                    <h4 class="pt-2 font-semibold text-ink dark:text-bone">What should not be lost</h4>
+                    {paragraphs(forest.data.costLeaving).map((paragraph) => <p>{paragraph}</p>)}
+                    {paragraphs(forest.data.orientation).map((paragraph) => <p>{paragraph}</p>)}
+                  </>
+                )}
+              </div>
+            </section>
+          ))}
+        </div>
+      </div>
+    </fieldset>
+
+    <p class="text-xs text-ash dark:text-neutral-400">
+      The illustration is a placeholder for the production artwork.
+    </p>
+  </section>
+
+  <section aria-labelledby="atlas-further-heading" class="space-y-4 border-t border-pine/15 pt-8 dark:border-moss/25">
+    <h2 id="atlas-further-heading" class="text-xl font-semibold text-ink dark:text-bone">
+      Investigate further
+    </h2>
+    <p class="max-w-prose text-sm leading-relaxed text-ash dark:text-neutral-300">
+      Related entries are loaded from the matching series.
+    </p>
+    {seriesEntries.length > 0 ? (
+      <details class="rounded-xl border border-pine/20 bg-paper/80 dark:border-moss/25 dark:bg-zinc-900/60">
+        <summary class="cursor-pointer rounded-xl p-4 font-semibold text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pine dark:text-bone dark:focus-visible:outline-moss">
+          Browse {seriesEntries.length} deeper reflections
+        </summary>
+        <ol class="grid gap-2 border-t border-pine/15 p-3 sm:grid-cols-2 dark:border-moss/20">
+          {seriesEntries.map((entry) => (
+            <li>
+              <a
+                href={`/forests/${entry.slug}`}
+                class="block h-full rounded-lg border border-pine/15 p-3 transition-colors hover:bg-pine/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-pine dark:border-moss/20 dark:hover:bg-moss/10 dark:focus-visible:outline-moss"
+              >
+                <span class="text-xs uppercase tracking-wide text-pine dark:text-moss">
+                  {entry.data.part ? `Reflection ${entry.data.part}` : "Reflection"}
+                </span>
+                <span class="mt-1 block font-semibold text-ink dark:text-bone">{entry.data.title}</span>
+                <span class="mt-1 block text-sm text-ash dark:text-neutral-300">{entry.data.summary}</span>
+              </a>
+            </li>
+          ))}
+        </ol>
+      </details>
+    ) : isSeriesComingSoon ? (
+      <p class="text-sm text-ash dark:text-neutral-300">Deeper reflections are being prepared.</p>
+    ) : (
+      <p class="text-sm text-ash dark:text-neutral-300">No deeper reflections are linked yet.</p>
+    )}
+
+    {forest.data.orientationLink && (
+      <a
+        href={forest.data.orientationLink.href}
+        class="inline-flex rounded-full border border-pine/40 px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-pine/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-pine dark:border-moss/40 dark:text-bone dark:hover:bg-moss/10 dark:focus-visible:outline-moss"
+      >
+        {forest.data.orientationLink.label}
+      </a>
+    )}
+  </section>
+
+  <section aria-label="Related personal formation pathways" class="border-t border-pine/15 pt-8 dark:border-moss/25">
+    <ForestFruitPathLinks forestSlug={forest.slug} />
+  </section>
+</div>
+
+<style>
+  .atlas-choice {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+  }
+  .atlas-marker {
+    position: absolute;
+    z-index: 1;
+    display: grid;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+    place-items: center;
+    border: 2px solid rgba(252, 250, 245, .94);
+    border-radius: 999px;
+    background: rgba(20, 17, 15, .83);
+    color: #fcfaf5;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, .22);
+    transition: background-color .15s ease, border-color .15s ease;
+  }
+  .atlas-marker:hover,
+  .atlas-marker:focus-visible {
+    background: #fcfaf5;
+    color: #14110f;
+    border-color: #14110f;
+  }
+  .atlas-marker-name {
+    position: absolute;
+    bottom: calc(100% + 7px);
+    left: 50%;
+    width: max-content;
+    max-width: 156px;
+    padding: 4px 7px;
+    transform: translateX(-50%);
+    border-radius: 4px;
+    background: #14110f;
+    color: #fcfaf5;
+    font-size: .7rem;
+    font-weight: 400;
+    line-height: 1.25;
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .atlas-marker:hover .atlas-marker-name {
+    opacity: 1;
+  }
+  .atlas-observation { display: none; }
+  .atlas-choice:nth-of-type(1):checked ~ .atlas-stage .atlas-observation:nth-child(1),
+  .atlas-choice:nth-of-type(2):checked ~ .atlas-stage .atlas-observation:nth-child(2),
+  .atlas-choice:nth-of-type(3):checked ~ .atlas-stage .atlas-observation:nth-child(3),
+  .atlas-choice:nth-of-type(4):checked ~ .atlas-stage .atlas-observation:nth-child(4),
+  .atlas-choice:nth-of-type(5):checked ~ .atlas-stage .atlas-observation:nth-child(5),
+  .atlas-choice:nth-of-type(6):checked ~ .atlas-stage .atlas-observation:nth-child(6) {
+    display: block;
+  }
+  .atlas-choice:nth-of-type(1):checked ~ .atlas-stage .atlas-marker:nth-of-type(1),
+  .atlas-choice:nth-of-type(2):checked ~ .atlas-stage .atlas-marker:nth-of-type(2),
+  .atlas-choice:nth-of-type(3):checked ~ .atlas-stage .atlas-marker:nth-of-type(3),
+  .atlas-choice:nth-of-type(4):checked ~ .atlas-stage .atlas-marker:nth-of-type(4),
+  .atlas-choice:nth-of-type(5):checked ~ .atlas-stage .atlas-marker:nth-of-type(5),
+  .atlas-choice:nth-of-type(6):checked ~ .atlas-stage .atlas-marker:nth-of-type(6) {
+    background: #fcfaf5;
+    color: #14110f;
+    border-color: #14110f;
+  }
+  .atlas-choice:focus-visible ~ .atlas-stage .atlas-marker {
+    outline-offset: 3px;
+  }
+  .atlas-choice:nth-of-type(1):focus-visible ~ .atlas-stage .atlas-marker:nth-of-type(1),
+  .atlas-choice:nth-of-type(2):focus-visible ~ .atlas-stage .atlas-marker:nth-of-type(2),
+  .atlas-choice:nth-of-type(3):focus-visible ~ .atlas-stage .atlas-marker:nth-of-type(3),
+  .atlas-choice:nth-of-type(4):focus-visible ~ .atlas-stage .atlas-marker:nth-of-type(4),
+  .atlas-choice:nth-of-type(5):focus-visible ~ .atlas-stage .atlas-marker:nth-of-type(5),
+  .atlas-choice:nth-of-type(6):focus-visible ~ .atlas-stage .atlas-marker:nth-of-type(6) {
+    outline: 3px solid #c3ab72;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .atlas-widget:has(.atlas-marker:hover) .atlas-observation { display: none; }
+    .atlas-widget:has(.atlas-marker:nth-of-type(1):hover) .atlas-observation:nth-child(1),
+    .atlas-widget:has(.atlas-marker:nth-of-type(2):hover) .atlas-observation:nth-child(2),
+    .atlas-widget:has(.atlas-marker:nth-of-type(3):hover) .atlas-observation:nth-child(3),
+    .atlas-widget:has(.atlas-marker:nth-of-type(4):hover) .atlas-observation:nth-child(4),
+    .atlas-widget:has(.atlas-marker:nth-of-type(5):hover) .atlas-observation:nth-child(5),
+    .atlas-widget:has(.atlas-marker:nth-of-type(6):hover) .atlas-observation:nth-child(6) {
+      display: block;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .atlas-marker { transition: none; }
+  }
+</style>

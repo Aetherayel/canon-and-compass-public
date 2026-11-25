@@ -1,0 +1,221 @@
+---
+import type { ArticleEntry } from "@lib/content";
+import {
+  ARTICLE_PROGRESS_STORAGE_KEY,
+  FOUNDATIONS_PROGRESS_STORAGE_KEY,
+  getArticleProgressKey,
+} from "@lib/articleProgress";
+
+type Props = {
+  entry: ArticleEntry
+}
+
+// Get the requested entry
+const { entry } = Astro.props
+const { Content } = await entry.render()
+const isDiscernmentSeries = entry.collection === "foundations-of-discernment"
+const articleProgressKey = getArticleProgressKey(entry.collection, entry.slug)
+const articleHref = isDiscernmentSeries
+  ? `/foundations/foundations-of-discernment/${entry.slug}`
+  : entry.collection === "bearings"
+    ? `/foundations/${entry.slug}`
+  : entry.collection === "compass-points"
+    ? `/forests/${entry.data.primaryForest}/compass-points/${entry.slug}`
+  : entry.collection === "forests"
+    ? `/forests/${entry.slug}`
+    : `/${entry.collection}/${entry.slug}`
+const articleMeta = {
+  key: articleProgressKey,
+  collection: entry.collection,
+  slug: entry.slug,
+  href: articleHref,
+  title: entry.data.title,
+  series: "series" in entry.data ? entry.data.series : undefined,
+  seriesPart: "day" in entry.data ? entry.data.day : "part" in entry.data ? entry.data.part : undefined,
+}
+---
+
+<div>
+  <article
+    data-reading-progress-article={articleProgressKey}
+    class:list={{ "foundations-discernment-article": isDiscernmentSeries }}
+  >
+    <Content/>
+  </article>
+  <div data-reading-progress-end={articleProgressKey}></div>
+  <!-- Production feedback integration omitted. -->
+</div>
+
+<script
+  is:inline
+  define:vars={{
+    articleMeta,
+    ARTICLE_PROGRESS_STORAGE_KEY,
+    FOUNDATIONS_PROGRESS_STORAGE_KEY,
+  }}
+>
+  (() => {
+    const article = document.querySelector(
+      `[data-reading-progress-article="${articleMeta.key}"]`,
+    );
+    const endMarker = document.querySelector(
+      `[data-reading-progress-end="${articleMeta.key}"]`,
+    );
+
+    const readProgressStore = () => {
+      try {
+        const raw = window.localStorage.getItem(ARTICLE_PROGRESS_STORAGE_KEY);
+        return raw ? JSON.parse(raw) : {};
+      } catch {
+        return {};
+      }
+    };
+
+    const writeProgressStore = (store) => {
+      try {
+        window.localStorage.setItem(
+          ARTICLE_PROGRESS_STORAGE_KEY,
+          JSON.stringify(store),
+        );
+      } catch {
+        // Progress is helpful but nonessential.
+      }
+    };
+
+    const updateReadingStatus = (record) => {
+      const badges = document.querySelectorAll(
+        `[data-reading-status="${articleMeta.key}"]`,
+      );
+
+      badges.forEach((badge) => {
+        const label = badge.querySelector("[data-reading-status-label]");
+        const dot = badge.querySelector("[data-reading-status-dot]");
+        const isComplete = Boolean(record?.completedAt);
+
+        badge.hidden = false;
+        badge.classList.add("inline-flex");
+        badge.classList.toggle("border-moss/35", isComplete);
+        badge.classList.toggle("bg-moss/10", isComplete);
+        badge.classList.toggle("text-moss", isComplete);
+        badge.classList.toggle("dark:text-moss", isComplete);
+
+        if (label) {
+          label.textContent = isComplete ? "Completed" : "In progress";
+        }
+
+        if (dot) {
+          dot.classList.toggle("bg-moss", isComplete);
+          dot.classList.toggle("bg-starlight", !isComplete);
+        }
+      });
+    };
+
+    const getScrollDepth = () => {
+      if (!article) return 0;
+
+      const rect = article.getBoundingClientRect();
+      const articleHeight = Math.max(article.scrollHeight, rect.height, 1);
+      const viewed = Math.min(
+        Math.max(window.innerHeight - rect.top, 0),
+        articleHeight,
+      );
+
+      return Math.max(0, Math.min(1, viewed / articleHeight));
+    };
+
+    const saveProgress = ({ complete = false } = {}) => {
+      const store = readProgressStore();
+      const existing = store[articleMeta.key] ?? {};
+      const now = new Date().toISOString();
+      const record = {
+        ...existing,
+        ...articleMeta,
+        lastVisitedAt: now,
+        maxScroll: Math.max(existing.maxScroll ?? 0, getScrollDepth()),
+        completedAt: complete ? existing.completedAt ?? now : existing.completedAt,
+      };
+
+      store[articleMeta.key] = record;
+      writeProgressStore(store);
+
+      if (articleMeta.collection === "foundations-of-discernment") {
+        try {
+          window.localStorage.setItem(
+            FOUNDATIONS_PROGRESS_STORAGE_KEY,
+            JSON.stringify(record),
+          );
+        } catch {
+          // Progress is helpful but nonessential.
+        }
+      }
+
+      updateReadingStatus(record);
+    };
+
+    if (article) {
+      saveProgress();
+
+      let ticking = false;
+      window.addEventListener(
+        "scroll",
+        () => {
+          if (ticking) return;
+          ticking = true;
+          window.requestAnimationFrame(() => {
+            saveProgress();
+            ticking = false;
+          });
+        },
+        { passive: true },
+      );
+
+      if (endMarker && "IntersectionObserver" in window) {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                saveProgress({ complete: true });
+                observer.disconnect();
+              }
+            });
+          },
+          { rootMargin: "0px 0px -12% 0px" },
+        );
+
+        observer.observe(endMarker);
+      }
+
+      window.addEventListener("pagehide", () => saveProgress());
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") {
+          saveProgress();
+        }
+      });
+    }
+  })();
+</script>
+
+<style is:global>
+  article.foundations-discernment-article blockquote {
+    margin-block: 1.75rem;
+    padding-inline-start: 1.25rem;
+    font-style: normal;
+  }
+
+  article.foundations-discernment-article blockquote p:first-of-type::before,
+  article.foundations-discernment-article blockquote p:last-of-type::after {
+    content: none;
+  }
+
+  article.foundations-discernment-article blockquote p:first-child {
+    margin-top: 0;
+  }
+
+  article.foundations-discernment-article blockquote p:last-child {
+    margin-bottom: 0;
+  }
+
+  article.foundations-discernment-article blockquote p + p {
+    margin-top: 0.55rem;
+  }
+</style>

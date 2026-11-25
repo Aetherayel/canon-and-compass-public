@@ -1,0 +1,35 @@
+---
+import { getCollection } from "astro:content";
+import PageLayout from "@layouts/PageLayout.astro";
+import TopLayout from "@layouts/TopLayout.astro";
+import BottomLayout from "@layouts/BottomLayout.astro";
+import ArticleList from "@components/ArticleList";
+import ArticleProgressListScript from "@components/ArticleProgressListScript.astro";
+import ArrowCard from "@components/ArrowCard";
+import { toCardEntry } from "@lib/cardEntries";
+import { isPublished } from "@lib/publication";
+
+const clearingEntries = (await getCollection("the-clearing"))
+  .filter(isPublished)
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+
+// An optional sequence, not a prerequisite for reading elsewhere.
+const startingSlugs = ["example-starting-essay"];
+const startingEntries = startingSlugs
+  .map((slug) => clearingEntries.find((entry) => entry.slug === slug))
+  .filter((entry): entry is (typeof clearingEntries)[number] => Boolean(entry));
+const otherEntries = clearingEntries.filter(
+  (entry) => !startingSlugs.includes(entry.slug),
+);
+const startingCards = startingEntries.map(toCardEntry);
+const otherCards = otherEntries.map(toCardEntry);
+---
+<!-- Adapted case-study markup. Field Notes stay in the shared article list. -->
+<PageLayout title="The Clearing">
+  <TopLayout><h1>The Clearing</h1></TopLayout>
+  <BottomLayout>
+    {startingCards.length > 0 && <section><h2>A Place to Start</h2>{startingCards.map((entry) => <ArrowCard entry={entry} />)}</section>}
+    <section><h2>More reading</h2><ArticleList data={otherCards} /></section>
+    <ArticleProgressListScript />
+  </BottomLayout>
+</PageLayout>

@@ -1,6 +1,6 @@
 Repository Rights Notice
 
-Last updated: June 7, 2026
+Last updated: November 24, 2026
 
 This repository is mixed-license and mixed-rights.
 
@@ -15,11 +15,7 @@ Unless a file says otherwise, the following material is not released under MIT a
 
 - all MDX and frontmatter in `src/content/**`
 - Canon & Compass editorial prose embedded in source files, including page copy, headings, summaries, descriptions, calls to action, and article-introduction text
-- Canon & Compass brand assets in:
-  - `public/brand.svg`
-  - `public/canonandcompass.jpg`
-  - `public/favicon.svg`
-  - `public/favicon_black.svg`
+- Canon & Compass brand assets and historical screenshots, including the PNG reference images in `public/`
 
 Mixed files
 
@@ -31,14 +27,12 @@ Some files contain both MIT-covered software structure and reserved editorial ex
 Third-party and separately noticed assets
 
 - Some assets may carry their own embedded notices or upstream terms.
-- Example: `public/copy.svg` includes a Font Awesome notice.
 - Those notices continue to apply to the material they cover.
 
 Primary reference files
 
 - `LICENSE`: MIT software license
 - `COPYRIGHT.md`: permissions and reuse policy
-- `src/content/RIGHTS.txt`: reserved content notice for collection files
-- `public/README.md`: reserved brand asset notice for public assets
+- `README.md`: scope of the selected code examples and historical reference images
 
 This notice is for clarity and project hygiene. It is not legal advice.

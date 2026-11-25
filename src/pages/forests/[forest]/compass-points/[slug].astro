@@ -1,0 +1,47 @@
+---
+import { getCollection } from "astro:content";
+import PageLayout from "@layouts/PageLayout.astro";
+import TopLayout from "@layouts/TopLayout.astro";
+import BottomLayout from "@layouts/BottomLayout.astro";
+import ArticleTopLayout from "@layouts/ArticleTopLayout.astro";
+import ArticleBottomLayout from "@layouts/ArticleBottomLayout.astro";
+import { isForestOverview } from "@lib/content";
+import { getCompassPoints } from "@lib/compassPoints";
+import { isPublished } from "@lib/publication";
+
+const { forest: forestSlug, slug } = Astro.params;
+const [forests, points] = await Promise.all([
+  getCollection("forests"),
+  getCompassPoints(),
+]);
+const forest = forests.find(
+  (entry) => entry.slug === forestSlug && isForestOverview(entry) && isPublished(entry),
+);
+const point = points.find(
+  (entry) => entry.slug === slug && isPublished(entry) &&
+    entry.data.primaryForest === forestSlug,
+);
+if (!forest || !point) return Astro.redirect("/forests");
+---
+
+<PageLayout
+  title={point.data.title}
+  description={point.data.summary}
+  seoTitle={point.data.seoTitle}
+  seoDescription={point.data.seoDescription}
+  pageType="article"
+  schemaType="Article"
+  publishedTime={point.data.date}
+  section="The Forests"
+  tags={point.data.tags}
+>
+  <TopLayout><div class="animate"><ArticleTopLayout entry={point}/></div></TopLayout>
+  <BottomLayout>
+    <div class="animate"><ArticleBottomLayout entry={point}/></div>
+    <div class="animate mt-8 text-sm text-ash dark:text-zinc-300">
+      <a href={`/forests/${forest.slug}`} class="font-semibold text-ink underline decoration-pine/50 underline-offset-4 dark:text-bone">
+        Return to {forest.data.title} →
+      </a>
+    </div>
+  </BottomLayout>
+</PageLayout>

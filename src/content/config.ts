@@ -6,6 +6,8 @@ const fruitPath = defineCollection({
     // Truth Tree details (top-level for search/RSS/listing compatibility)
     title: z.string(),
     summary: z.string(),
+    seoTitle: z.string().optional(),
+    seoDescription: z.string().optional(),
     date: z.coerce.date(),
     tags: z.array(z.string()),
 
@@ -43,6 +45,15 @@ const fruitPath = defineCollection({
       })
       .optional(),
 
+    // Legacy article slugs that should redirect into this pathway
+    legacy: z
+      .object({
+        canonNotes: z.array(z.string()).optional(),
+        compassPoints: z.array(z.string()).optional(),
+        pillars: z.array(z.string()).optional(),
+      })
+      .optional(),
+
     // Counterfeit/False Tree (optional placeholder for future)
     counterfeitTree: z
       .object({
@@ -60,6 +71,8 @@ const foundationsOfDiscernment = defineCollection({
   schema: z.object({
     title: z.string(),
     summary: z.string(),
+    seoTitle: z.string().optional(),
+    seoDescription: z.string().optional(),
     date: z.coerce.date(),
     series: z.string(),
     day: z.number().optional(),
@@ -77,9 +90,15 @@ const forests = defineCollection({
   schema: z.union([
     z.object({
       type: z.literal("forest"),
+      order: z.number().optional(),
       title: z.string(),
+      cardTitle: z.string().optional(),
       subtitle: z.string(),
+      tagline: z.string().optional(),
+      cardSummary: z.string().optional(),
       summary: z.string(),
+      seoTitle: z.string().optional(),
+      seoDescription: z.string().optional(),
       series: z.string(),
       relatedPathways: z.array(z.string()).optional(),
       climate: z.string(),
@@ -89,6 +108,20 @@ const forests = defineCollection({
       costStaying: z.string(),
       costLeaving: z.string(),
       pathIntro: z.string(),
+      // Optional interactive Forest field guide; standard overview is fallback.
+      atlas: z
+        .object({
+          threshold: z.string(),
+          trails: z.string(),
+          edge: z.string(),
+          beyond: z.string(),
+          image: z.string().optional(),
+          markers: z.record(z.object({
+            x: z.number().min(0).max(100),
+            y: z.number().min(0).max(100),
+          })).optional(),
+        })
+        .optional(),
       orientation: z.string(),
       orientationLink: z
         .object({
@@ -102,6 +135,8 @@ const forests = defineCollection({
       type: z.literal("entry").optional(),
       title: z.string(),
       summary: z.string(),
+      seoTitle: z.string().optional(),
+      seoDescription: z.string().optional(),
       date: z.coerce.date(),
       series: z.string(),
       part: z.number().optional(),
@@ -122,8 +157,11 @@ const theClearing = defineCollection({
   schema: z.object({
     title: z.string(),
     summary: z.string(),
+    seoTitle: z.string().optional(),
+    seoDescription: z.string().optional(),
     date: z.coerce.date(),
     tags: z.array(z.string()),
+    stream: z.enum(["field-notes"]).optional(),
     pathwayId: z.string().optional(),
     draft: z.boolean().optional(),
     prevHref: z.string().optional(),
@@ -134,8 +172,44 @@ const theClearing = defineCollection({
 })
 
 
+// Bearings are foundational studies rather than Clearing witness essays.
+const bearings = defineCollection({
+  type: "content",
+  schema: z.object({
+    title: z.string(),
+    summary: z.string(),
+    seoTitle: z.string().optional(),
+    seoDescription: z.string().optional(),
+    date: z.coerce.date(),
+    tags: z.array(z.string()),
+    kind: z.enum(["worldview", "theology"]).default("worldview"),
+    series: z.string().optional(),
+    seriesSummary: z.string().optional(),
+    part: z.number().optional(),
+    draft: z.boolean().optional(),
+  }),
+});
+
+// Compass Points are individual studies surfaced contextually by their related Forests.
+const compassPoints = defineCollection({
+  type: "content",
+  schema: z.object({
+    title: z.string(),
+    summary: z.string(),
+    seoTitle: z.string().optional(),
+    seoDescription: z.string().optional(),
+    date: z.coerce.date(),
+    tags: z.array(z.string()),
+    primaryForest: z.string(),
+    relatedForests: z.array(z.string()).optional(),
+    draft: z.boolean().optional(),
+  }),
+});
+
 export const collections = {
   "fruit-path": fruitPath,
+  bearings,
+  "compass-points": compassPoints,
   forests,
   'the-clearing': theClearing,
   "foundations-of-discernment": foundationsOfDiscernment,

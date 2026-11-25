@@ -1,0 +1,25 @@
+---
+import { ARTICLE_PROGRESS_STORAGE_KEY } from "@lib/articleProgress";
+---
+
+<script is:inline define:vars={{ ARTICLE_PROGRESS_STORAGE_KEY }}>
+  (() => {
+    const readProgressStore = () => {
+      try {
+        const raw = window.localStorage.getItem(ARTICLE_PROGRESS_STORAGE_KEY);
+        return raw ? JSON.parse(raw) : {};
+      } catch {
+        return {};
+      }
+    };
+
+    const progressStore = readProgressStore();
+
+    document.querySelectorAll("[data-reading-card-status]").forEach((status) => {
+      const key = status.getAttribute("data-reading-card-status");
+      if (!key || !progressStore[key]?.completedAt) return;
+
+      status.hidden = false;
+    });
+  })();
+</script>

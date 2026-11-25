@@ -4,15 +4,14 @@ import BaseHead from "@components/BaseHead.astro"
 import Header from "@components/Header.astro"
 import Footer from "@components/Footer.astro"
 import Drawer from "@components/Drawer.astro"
-import SpeedInsights from "@vercel/speed-insights/astro"
-const { title, description, ...headProps } = Astro.props
+const { title, description, seoTitle, ...headProps } = Astro.props
 import { SITE } from "@consts"
 ---
 
 <!doctype html>
 <html lang="en">
   <head>
-    <BaseHead title={`${title} | ${SITE.TITLE}`} description={description} {...headProps} />
+    <BaseHead title={`${title} | ${SITE.TITLE}`} seoTitle={seoTitle ? `${seoTitle} | ${SITE.TITLE}` : undefined} description={description} {...headProps} />
   </head>
   <body>
     <Header />
@@ -21,6 +20,6 @@ import { SITE } from "@consts"
       <slot />
     </main>
     <Footer />
-    <SpeedInsights />
+    <!-- Production telemetry and integration code omitted. -->
   </body>
 </html>

@@ -5,30 +5,30 @@ import TopLayout from "@layouts/TopLayout.astro";
 import BottomLayout from "@layouts/BottomLayout.astro";
 import Search from "@components/Search";
 import { SEARCH } from "@consts";
-import { isForestPathEntry } from "@lib/content";
 import { toCardEntry } from "@lib/cardEntries";
+import { getCompassPoints } from "@lib/compassPoints";
+import { isPublished } from "@lib/publication";
 
-const posts = (await getCollection("fruit-path")).filter(
-  (post) => !post.data.draft,
-);
+const posts = (await getCollection("fruit-path")).filter(isPublished);
 
-const clearing = (await getCollection("the-clearing")).filter(
-  (entry) => !entry.data.draft,
-);
+const clearing = (await getCollection("the-clearing")).filter(isPublished);
 
-const forests = (await getCollection("forests")).filter(
-  (post) => isForestPathEntry(post) && !post.data.draft,
-);
+const forests = (await getCollection("forests")).filter(isPublished);
+
+const bearings = (await getCollection("bearings")).filter(isPublished);
+const compassPoints = (await getCompassPoints()).filter(isPublished);
 
 const discernmentEntries = (await getCollection("foundations-of-discernment")).filter(
-  (post) => !post.data.draft,
+  isPublished,
 );
 
-const data = [...posts, ...clearing, ...forests, ...discernmentEntries] as CollectionEntry<
+const data = [...posts, ...clearing, ...forests, ...bearings, ...compassPoints, ...discernmentEntries] as CollectionEntry<
   | "fruit-path"
   | "the-clearing"
   | "forests"
   | "foundations-of-discernment"
+  | "bearings"
+  | "compass-points"
 >[];
 
 const cardData = data.map((entry) => toCardEntry(entry));
@@ -38,6 +38,7 @@ const cardData = data.map((entry) => toCardEntry(entry));
   title={SEARCH.TITLE}
   description={SEARCH.DESCRIPTION}
   schemaType="SearchResultsPage"
+  robots="noindex,follow"
   section="Search"
 >
   <TopLayout>

@@ -1,0 +1,165 @@
+---
+import { getCollection } from "astro:content";
+import { isForestOverview, isForestPathEntry } from "@lib/content";
+import { getCompassPoints } from "@lib/compassPoints";
+import { isPublished } from "@lib/publication";
+
+type RecentDestination = {
+  section: string;
+  form?: "Field Notes" | "Foundations of Discernment";
+  title: string;
+  summary: string;
+  href: string;
+  date: Date;
+  accent: "starlight" | "pine" | "ember" | "moss" | "fig";
+};
+
+const [allClearingEntries, allForestEntries, allFruitPaths, allFoundationEntries, allBearingEntries, allCompassPoints] =
+  await Promise.all([
+    getCollection("the-clearing"),
+    getCollection("forests"),
+    getCollection("fruit-path"),
+    getCollection("foundations-of-discernment"),
+    getCollection("bearings"),
+    getCompassPoints(),
+  ] as const);
+
+const clearingEntries = allClearingEntries.filter(isPublished);
+const forestEntries = allForestEntries.filter(isPublished);
+const fruitPaths = allFruitPaths.filter(isPublished);
+const foundationEntries = allFoundationEntries.filter(isPublished);
+const bearingEntries = allBearingEntries.filter(isPublished);
+const compassPoints = allCompassPoints.filter(isPublished);
+
+const newestByDate = <T extends { data: { date: Date } }>(entries: T[]) =>
+  entries.reduce<T | undefined>(
+    (newest, entry) =>
+      !newest || entry.data.date.getTime() > newest.data.date.getTime()
+        ? entry
+        : newest,
+    undefined,
+  );
+
+const recentDestinations: RecentDestination[] = clearingEntries.map((entry) => ({
+  section: "The Clearing",
+  form: entry.data.stream === "field-notes" ? "Field Notes" : undefined,
+  title: entry.data.title,
+  summary: entry.data.summary,
+  href: `/the-clearing/${entry.slug}`,
+  date: entry.data.date,
+  accent: "starlight",
+}));
+
+recentDestinations.push(
+  ...fruitPaths.map((entry) => ({
+    section: "Fruit Paths",
+    title: entry.data.title,
+    summary: entry.data.summary,
+    href: `/fruit-path/${entry.data.pathwayId ?? entry.slug}`,
+    date: entry.data.date,
+    accent: "ember" as const,
+  })),
+  ...bearingEntries.map((entry) => ({
+    section: "The Foundations",
+    title: entry.data.title,
+    summary: entry.data.summary,
+    href: `/foundations/${entry.slug}`,
+    date: entry.data.date,
+    accent: "fig" as const,
+  })),
+  ...compassPoints.map((entry) => ({
+    section: "Compass Point",
+    title: entry.data.title,
+    summary: entry.data.summary,
+    href: `/forests/${entry.data.primaryForest}/compass-points/${entry.slug}`,
+    date: entry.data.date,
+    accent: "pine" as const,
+  })),
+  ...foundationEntries.map((entry) => ({
+    section: "The Foundations",
+    form: "Foundations of Discernment",
+    title: entry.data.title,
+    summary: entry.data.summary,
+    href: `/foundations/foundations-of-discernment/${entry.slug}`,
+    date: entry.data.date,
+    accent: "fig" as const,
+  })),
+);
+
+const publishedForestOverviews = forestEntries.filter(isForestOverview);
+const forestPathEntries = forestEntries.filter(isForestPathEntry);
+
+for (const forest of publishedForestOverviews) {
+  const newestEntry = newestByDate(
+    forestPathEntries.filter((entry) => entry.data.series === forest.data.series),
+  );
+
+  if (!newestEntry) continue;
+
+  recentDestinations.push({
+    section: "The Forests",
+    title: forest.data.title,
+    summary: forest.data.summary,
+    href: `/forests/${forest.slug}`,
+    date: newestEntry.data.date,
+    accent: "pine",
+  });
+}
+
+const now = new Date();
+const recentCutoff = new Date(now);
+recentCutoff.setUTCHours(0, 0, 0, 0);
+recentCutoff.setUTCDate(recentCutoff.getUTCDate() - 28);
+
+const latestThree = recentDestinations
+  .filter(
+    (item) =>
+      item.date.getTime() >= recentCutoff.getTime() &&
+      item.date.getTime() <= now.getTime(),
+  )
+  .sort((a, b) => b.date.getTime() - a.date.getTime())
+  .slice(0, 3);
+
+// When publication is quiet, continue offering a few substantial places to begin.
+// Resolve by existing published entries so titles, summaries, and destinations stay canonical.
+const evergreenHrefs = ["/the-clearing/example-essay", "/fruit-path/example-path", "/foundations/example-study"];
+const evergreenThree = evergreenHrefs
+  .map((href) => recentDestinations.find((item) => item.href === href))
+  .filter((item): item is RecentDestination => item !== undefined);
+const isShowingEvergreen = latestThree.length === 0;
+const featuredDestinations = isShowingEvergreen ? evergreenThree : latestThree;
+
+const formatPublishedDate = (date: Date) =>
+  date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+const destinations = [
+  { title: "The Clearing", href: "/the-clearing", action: "Enter" },
+  { title: "The Forests", href: "/forests", action: "Explore" },
+  { title: "Fruit Paths", href: "/fruit-path", action: "Walk" },
+  { title: "The Foundations", href: "/foundations", action: "Study" },
+];
+---
+
+<!-- Adapted case-study markup; production hero, copy, and artwork omitted. -->
+<main>
+  <h1>Canon &amp; Compass</h1>
+  <a href="/find-your-bearings">Find Your Bearings</a>
+  <nav aria-label="Main sections" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    {destinations.map((item) => <a href={item.href}>{item.action}: {item.title}</a>)}
+  </nav>
+  {featuredDestinations.length > 0 && (
+    <section>
+      <h2>{isShowingEvergreen ? "Suggested reading" : "Recent reading"}</h2>
+      {featuredDestinations.map((item) => (
+        <a href={item.href}>
+          <span>{item.section}{item.form ? ` · ${item.form}` : ""}</span>
+          <h3>{item.title}</h3><p>{item.summary}</p><time>{formatPublishedDate(item.date)}</time>
+        </a>
+      ))}
+    </section>
+  )}
+</main>

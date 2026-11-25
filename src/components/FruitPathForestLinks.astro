@@ -1,6 +1,5 @@
 ---
 import CrossLinkCards from "@components/CrossLinkCards.astro";
-import { FOREST_FRUIT_CROSS_LINKS } from "@consts";
 import { getRelatedForestsForPathway } from "@lib/content";
 
 export interface Props {
@@ -20,9 +19,8 @@ const items = forests.map((entry) => ({
 ---
 
 <CrossLinkCards
-  eyebrow={FOREST_FRUIT_CROSS_LINKS.FRUIT_TO_FORESTS.EYEBROW}
-  heading={FOREST_FRUIT_CROSS_LINKS.FRUIT_TO_FORESTS.HEADING}
-  blurb={FOREST_FRUIT_CROSS_LINKS.FRUIT_TO_FORESTS.BLURB}
+  heading="Related Forests"
+  blurb="Related entries from collection metadata."
   items={items}
   accent="ember"
 />

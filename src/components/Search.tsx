@@ -8,6 +8,13 @@ type Props = {
   data: CardEntry[]
 }
 
+const suggestedStarts = [
+  { href: "/the-clearing", label: "The Clearing" },
+  { href: "/forests", label: "The Forests" },
+  { href: "/fruit-path", label: "Fruit Paths" },
+  { href: "/foundations", label: "The Foundations" },
+]
+
 export default function Search({ data }: Props) {
   const [query, setQuery] = createSignal("")
   const [results, setResults] = createSignal<CardEntry[]>([])
@@ -55,6 +62,27 @@ export default function Search({ data }: Props) {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {(query().length >= 2 && results().length === 0) && (
+        <div class="mt-12 rounded-xl border border-ash/15 bg-paper/80 p-5 text-ash dark:border-bone/15 dark:bg-white/5 dark:text-zinc-300">
+          <div class="text-sm font-semibold uppercase tracking-[0.16em] text-ink dark:text-bone">
+            No results found
+          </div>
+          <p class="mt-3 max-w-prose text-sm">
+            Try another term or browse a section.
+          </p>
+          <div class="mt-4 flex flex-wrap gap-2">
+            {suggestedStarts.map((start) => (
+              <a
+                href={start.href}
+                class="rounded-full border border-starlight/35 px-3 py-1.5 text-sm font-semibold text-ink transition-colors hover:bg-starlight/15 dark:text-bone"
+              >
+                {start.label}
+              </a>
+            ))}
+          </div>
         </div>
       )}
     </div>
