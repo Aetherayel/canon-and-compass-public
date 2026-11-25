@@ -1,0 +1,124 @@
+---
+import { getCollection } from "astro:content";
+import PageLayout from "@layouts/PageLayout.astro";
+import TopLayout from "@layouts/TopLayout.astro";
+import BottomLayout from "@layouts/BottomLayout.astro";
+import ArticleTopLayout from "@layouts/ArticleTopLayout.astro";
+import ArticleBottomLayout from "@layouts/ArticleBottomLayout.astro";
+import ForestFruitPathLinks from "@components/ForestFruitPathLinks.astro";
+import ForestAtlas from "@components/ForestAtlas.astro";
+import ArrowCard from "@components/ArrowCard";
+import { toCardEntry } from "@lib/cardEntries";
+import {
+  isForestOverview,
+  isForestPathEntry,
+  getPublishedCompassPointsForForest,
+  type ForestOverviewEntry,
+  type ForestPathEntry,
+} from "@lib/content";
+import { isPublished } from "@lib/publication";
+
+type Props =
+  | { type: "entry"; entry: ForestPathEntry }
+  | { type: "forest"; entry: ForestOverviewEntry };
+
+const slugParam = Astro.params.slug;
+const slug = Array.isArray(slugParam) ? slugParam.join("/") : slugParam;
+const allForests = await getCollection("forests");
+const matchedEntry = slug
+  ? allForests.find(
+      (candidate) => candidate.slug === slug && isPublished(candidate),
+    )
+  : undefined;
+
+if (!matchedEntry) {
+  return Astro.redirect("/forests");
+}
+
+const resolvedType: Props["type"] = isForestOverview(matchedEntry)
+  ? "forest"
+  : "entry";
+const isForest = resolvedType === "forest";
+const forest = isForest ? (matchedEntry as ForestOverviewEntry) : null;
+const worldview = isForest ? null : (matchedEntry as ForestPathEntry);
+const compassPointCards = forest
+  ? (await getPublishedCompassPointsForForest(forest.slug)).map(toCardEntry)
+  : [];
+
+const pageTitle = forest?.data.title ?? worldview?.data.title ?? "";
+const pageDescription = forest?.data.summary ?? worldview?.data.summary ?? "";
+const seriesName = forest?.data.series ?? worldview?.data.series;
+
+const forestEntries = allForests.filter(isForestPathEntry);
+
+const allSeriesEntries = seriesName
+  ? forestEntries
+      .filter((entry) => entry.data.series === seriesName)
+      .sort((a, b) => {
+        const aPart = a.data.part ?? Number.MAX_SAFE_INTEGER;
+        const bPart = b.data.part ?? Number.MAX_SAFE_INTEGER;
+        if (aPart !== bPart) return aPart - bPart;
+        return a.data.date.getTime() - b.data.date.getTime();
+      })
+  : [];
+
+const seriesEntries = allSeriesEntries.filter(isPublished);
+const isSeriesComingSoon =
+  allSeriesEntries.length > 0 && seriesEntries.length === 0;
+
+const activePart = worldview?.data.part;
+const currentSeriesIndex = worldview
+  ? seriesEntries.findIndex((entry) => entry.slug === worldview.slug)
+  : -1;
+const nextSeriesEntry =
+  currentSeriesIndex >= 0 && currentSeriesIndex < seriesEntries.length - 1
+    ? seriesEntries[currentSeriesIndex + 1]
+    : undefined;
+
+// Invite reflection only after the final entry of a fully published seven-part trail.
+// Partial or draft trails do not imply that the reader has reached an ending.
+const completedForestOverview =
+  !isForest &&
+  activePart === 7 &&
+  seriesEntries.length === 7 &&
+  currentSeriesIndex === 6 &&
+  seriesName
+    ? allForests
+        .filter(isForestOverview)
+        .find((entry) => entry.data.series === seriesName && isPublished(entry))
+    : undefined;
+
+---
+<!-- Adapted case-study markup; production fallback prose and feedback omitted. -->
+<PageLayout title={pageTitle} description={pageDescription}>
+  {forest ? (
+    <>
+      <TopLayout><h1>{forest.data.title}</h1><p>{forest.data.subtitle}</p></TopLayout>
+      <BottomLayout>
+        {forest.data.atlas ? (
+          <ForestAtlas forest={forest} seriesEntries={seriesEntries} isSeriesComingSoon={isSeriesComingSoon} />
+        ) : (
+          <section>
+            <blockquote>{forest.data.quietGospel}</blockquote>
+            <p>{forest.data.climate}</p>
+            <ul>{forest.data.canopy.map((item) => <li>{item}</li>)}</ul>
+            <ol>{seriesEntries.map((entry) => <li><a href={`/forests/${entry.slug}`}>{entry.data.title}</a></li>)}</ol>
+            <ForestFruitPathLinks forestSlug={forest.slug} />
+          </section>
+        )}
+        {compassPointCards.length > 0 && (
+          <section><h2>Compass Points</h2>{compassPointCards.map((entry) => <ArrowCard entry={entry} />)}</section>
+        )}
+      </BottomLayout>
+    </>
+  ) : worldview && (
+    <>
+      <TopLayout><ArticleTopLayout entry={worldview} /></TopLayout>
+      <BottomLayout>
+        <ArticleBottomLayout entry={worldview} />
+        {nextSeriesEntry && <a href={`/forests/${nextSeriesEntry.slug}`}>Next: {nextSeriesEntry.data.title}</a>}
+        {completedForestOverview && <a href={`/forests/${completedForestOverview.slug}`}>Return to Forest</a>}
+      </BottomLayout>
+    </>
+  )}
+</PageLayout>

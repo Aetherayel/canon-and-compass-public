@@ -1,0 +1,51 @@
+---
+import { getCollection } from "astro:content";
+import PageLayout from "@layouts/PageLayout.astro";
+import TopLayout from "@layouts/TopLayout.astro";
+import BottomLayout from "@layouts/BottomLayout.astro";
+import {
+  getPublishedForestOverviews,
+  isForestPathEntry,
+} from "@lib/content";
+import { isPublished } from "@lib/publication";
+
+const [publishedForestOverviews, allForestEntries] = await Promise.all([
+  getPublishedForestOverviews(),
+  getCollection("forests"),
+]);
+const trailEntries = allForestEntries.filter(isForestPathEntry);
+
+const forestCards = publishedForestOverviews
+  .sort((a, b) => (a.data.order ?? 0) - (b.data.order ?? 0))
+  .map((forest) => {
+    const matchingTrailEntries = trailEntries.filter(
+      (entry) => entry.data.series === forest.data.series,
+    );
+
+    return {
+      title: forest.data.cardTitle ?? forest.data.title,
+      theme: forest.data.series,
+      tagline: forest.data.tagline ?? forest.data.subtitle,
+      description: forest.data.cardSummary ?? forest.data.summary,
+      href: `/forests/${forest.slug}`,
+      isSeriesComingSoon:
+        matchingTrailEntries.length > 0 &&
+        matchingTrailEntries.every((entry) => !isPublished(entry)),
+    };
+  });
+---
+<!-- Adapted case-study markup. -->
+<PageLayout title="The Forests">
+  <TopLayout><h1>The Forests</h1></TopLayout>
+  <BottomLayout>
+    <div class="grid gap-4 sm:grid-cols-2">
+      {forestCards.map((forest) => (
+        <a href={forest.href}>
+          <span>{forest.theme}</span><h2>{forest.title}</h2>
+          <p>{forest.tagline}</p><p>{forest.description}</p>
+          {forest.isSeriesComingSoon && <span>Trail coming soon</span>}
+        </a>
+      ))}
+    </div>
+  </BottomLayout>
+</PageLayout>

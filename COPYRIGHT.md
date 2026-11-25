@@ -1,6 +1,6 @@
 Copyright and Permissions
 
-Last updated: June 7, 2026
+Last updated: November 24, 2026
 
 This repository contains two different categories of material, and they are not licensed the same way.
 
@@ -27,12 +27,7 @@ This includes items such as:
 - site copy written for Canon & Compass, including prose embedded in source files
 - original images, graphics, and brand assets
 
-Reserved brand assets currently include:
-
-- `public/brand.svg`
-- `public/canonandcompass.jpg`
-- `public/favicon.svg`
-- `public/favicon_black.svg`
+Reserved creative material includes Canon & Compass branding and historical screenshots, including the PNG reference images in `public/`.
 
 Some files are mixed files that contain both software structure and editorial expression. In those files, the code may be MIT-covered while the Canon & Compass prose, branding, and creative expression remain reserved.
 

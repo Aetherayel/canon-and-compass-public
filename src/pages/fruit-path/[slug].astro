@@ -1,0 +1,21 @@
+---
+import { getCollection } from "astro:content";
+import FruitPathPage from "@layouts/FruitPathPage.astro";
+import { isPublished } from "@lib/publication";
+
+const slug = Astro.params.slug;
+const entries = (await getCollection("fruit-path")).filter(isPublished);
+const entry = slug
+  ? entries.find((candidate) => candidate.slug === slug)
+  : undefined;
+
+if (!entry) {
+  return Astro.redirect("/fruit-path");
+}
+---
+
+<FruitPathPage
+  entry={entry}
+  backHref="/fruit-path"
+  backLabel="Fruit Paths"
+/>

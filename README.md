@@ -1,58 +1,48 @@
-# Canon & Compass
+# Canon & Compass — Engineering Case Study
 
-Live site: `https://www.canonandcompass.com`
+[Visit the live site](https://canonandcompass.com)
 
-This repository is a curated public case study for Canon & Compass, a custom Astro publishing site I designed and built. The live project is content-rich and structurally opinionated, but this repo is intentionally selective: it shares representative implementation and architecture decisions without reproducing the full editorial body of work.
+Canon & Compass is a Christian formation-oriented publishing platform built with Astro. It organizes reading around what a reader needs to understand rather than around a chronological blog archive.
 
-Canon & Compass was built around a guided reader journey rather than a standard blog archive. The technical challenge was not only publishing content, but designing a content model, route structure, and linking system that could support orientation, discovery, and progression across a large body of writing.
+This repository is a **curated engineering case study**, not the production source, a starter template, or a runnable mirror. The examples illustrate architecture and selected implementation patterns; editorial copy, production artwork, private integrations, build configuration, and some dependencies are deliberately omitted or replaced.
 
-## What This Public Repo Includes
+## Reader architecture
 
-- representative Astro, TypeScript, and component code
-- content schema and metadata modeling examples
-- search implementation and data shaping
-- a few screenshots of the live site
-- sample placeholder content used only to demonstrate structure
+| Destination | Function | Implementation |
+| --- | --- | --- |
+| The Clearing | Witness and reorientation | Shared article listing, including Field Notes |
+| The Forests | Explore formative worldviews and environments | Interactive six-marker field guides, ordered trails, contextual Compass Points |
+| Fruit Paths | Trace a pattern from fruit to root and renewal | Integrated pathway pages with links to related Forests |
+| The Foundations | Biblical, theological, philosophical, and worldview grounding | Theology and worldview shelves plus guided studies |
 
-## What It Intentionally Does Not Include
+These are independent entry points, not mandatory sequential stages. Find Your Bearings provides an additional guided orientation experience.
 
-- the full production content collection
-- protected editorial copy and unpublished material
-- private strategy documents or internal writing guides
-- reusable rights to Canon & Compass brand assets or essays
+## Engineering highlights
+
+- **Typed content model:** six collections, discriminated Forest overview/trail schemas, structured pathway metadata, stable IDs and relationships.
+- **Route and publication policy:** canonical destinations, legacy redirects, shared draft/date gating in the America/Chicago time zone.
+- **Interactive field guides:** CSS-driven marker selection, keyboard-operable radio inputs, per-entry coordinates, responsive detail panels, and ordered deeper reading.
+- **Search:** server-side metadata projection into a common card model; SolidJS and Fuse.js handle client-side matching.
+- **Reading continuity:** browser-local progress, article completion, stable collection-based keys across route migrations.
+- **Homepage:** four reader destinations, recent publication aggregation, and evergreen fallback.
 
 ## Stack
 
-- Astro
-- TypeScript
-- MDX
-- Tailwind CSS
-- SolidJS
-- Fuse.js
+Astro 5 (server output on Vercel), Node.js 22, TypeScript, MDX, Tailwind CSS, SolidJS, and Fuse.js. The public repository intentionally excludes deployment configuration and is not independently buildable.
 
-## What I Focused On
+## Explore the examples
 
-- Information architecture: the site is organized around reader pathways rather than chronology.
-- Content modeling: typed frontmatter and collection schemas support consistent rendering, linking, and search.
-- Relational navigation: content types connect to each other intentionally rather than living as isolated posts.
-- Lightweight implementation: static generation keeps the site fast while a small amount of client-side interactivity supports search.
+| Area | Representative files |
+| --- | --- |
+| Data model | [Collection schema](src/content/config.ts), [relationships](src/lib/content.ts), [publication policy](src/lib/publication.ts) |
+| Layouts | [Page shell](src/layouts/PageLayout.astro), [article header](src/layouts/ArticleTopLayout.astro), [article body](src/layouts/ArticleBottomLayout.astro), [Fruit Path](src/layouts/FruitPathPage.astro) |
+| Interactive Forests | [Atlas component](src/components/ForestAtlas.astro), [Forest route](src/pages/forests/%5B...slug%5D.astro), [cross-link cards](src/components/CrossLinkCards.astro) |
+| Discovery | [Homepage excerpt](src/pages/index.astro), [search assembly](src/pages/search/index.astro), [search UI](src/components/Search.tsx), [card projection](src/lib/cardEntries.ts) |
+| Foundations and Clearing | [Foundations excerpt](src/pages/foundations.astro), [Clearing excerpt](src/pages/the-clearing/index.astro) |
+| Reading continuity | [Progress keys](src/lib/articleProgress.ts), [list status](src/components/ArticleProgressListScript.astro) |
 
-## Representative Files
-
-- `src/content/config.ts`
-- `src/lib/content.ts`
-- `src/components/Search.tsx`
-- `src/components/PathwayLinks.astro`
-- `src/layouts/PageLayout.astro`
-- `src/layouts/FruitPathPage.astro`
-- `src/pages/search/index.astro`
-
-## Notes On Scope
-
-This is not the full production source. It is a selective engineering case study meant to show how I think about structure, content systems, and product-oriented frontend architecture while respecting the project's editorial and IP boundaries.
+See [Architecture Notes](ARCHITECTURE_TEMPLATE.md) for the route map, implementation tradeoffs, and redaction details. Existing PNGs in `public/` are historical reference images, not current screenshots; visit the live site for its present design. `public/example-atlas.svg` is an illustrative placeholder, not production artwork.
 
 ## Rights
 
-Code included in this public repo is licensed as described in `LICENSE`.
-
-Editorial content, screenshots, branding, and other Canon & Compass creative material remain subject to the notices in `NOTICE.md` and `COPYRIGHT.md`.
+Software licensing and reserved editorial/creative material are distinct. See [LICENSE](LICENSE), [NOTICE](NOTICE.md), and [COPYRIGHT](COPYRIGHT.md). No production article collection or internal editorial guide is included.

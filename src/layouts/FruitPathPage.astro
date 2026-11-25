@@ -4,6 +4,10 @@ import PageLayout from "@layouts/PageLayout.astro";
 import TopLayout from "@layouts/TopLayout.astro";
 import BottomLayout from "@layouts/BottomLayout.astro";
 import FruitPathForestLinks from "@components/FruitPathForestLinks.astro";
+import {
+  ARTICLE_PROGRESS_STORAGE_KEY,
+  getArticleProgressKey,
+} from "@lib/articleProgress";
 
 type Props = {
   entry: CollectionEntry<"fruit-path">;
@@ -33,18 +37,28 @@ const title = pathwayLabel ?? fallbackLabel;
 const description =
   shiftData?.description ??
   treeSummary ??
-  "Name the fruit, trace the root, and return to Christ in truthful obedience.";
+  "Integrated pathway overview.";
 const articleTags = Array.from(
   new Set([...(data?.tags ?? []), ...(shiftData?.tags ?? [])]),
 );
 
 const { Content } = await entry.render();
 const pathwayId = data?.pathwayId ?? entry.slug;
+const articleProgressKey = getArticleProgressKey(entry.collection, entry.slug);
+const articleMeta = {
+  key: articleProgressKey,
+  collection: entry.collection,
+  slug: entry.slug,
+  href: `/fruit-path/${pathwayId}`,
+  title,
+};
 ---
 
 <PageLayout
   title={title}
   description={description}
+  seoTitle={data?.seoTitle}
+  seoDescription={data?.seoDescription}
   pageType="article"
   schemaType="Article"
   publishedTime={data?.date}
@@ -55,7 +69,7 @@ const pathwayId = data?.pathwayId ?? entry.slug;
     <div class="animate">
       <a
         href={backHref}
-        class="group flex w-fit items-center gap-1.5 rounded border border-ash/20 p-1.5 text-sm transition-colors duration-300 ease-in-out hover:border-ember/50 hover:bg-ember/10 hover:text-ink dark:border-bone/15 dark:hover:bg-ember/10 dark:hover:text-bone"
+        class="group relative z-[70] flex min-h-11 w-fit touch-manipulation items-center gap-1.5 rounded border border-ash/20 px-2.5 py-2 text-sm transition-colors duration-300 ease-in-out hover:border-ember/50 hover:bg-ember/10 hover:text-ink dark:border-bone/15 dark:hover:bg-ember/10 dark:hover:text-bone"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -105,10 +119,22 @@ const pathwayId = data?.pathwayId ?? entry.slug;
 
         <div class="mt-5 flex flex-wrap gap-2 text-xs uppercase tracking-[0.18em]">
           <span class="rounded-full border border-ember/30 bg-ember/10 px-3 py-1 text-ink dark:border-ember/25 dark:bg-ember/10 dark:text-bone">
-            Name the fruit
+            Fruit
           </span>
           <span class="rounded-full border border-moss/30 bg-moss/10 px-3 py-1 text-ink dark:border-moss/25 dark:bg-moss/10 dark:text-bone">
-            Return to the root
+            Root
+          </span>
+          <span
+            data-reading-status={articleProgressKey}
+            hidden
+            class="items-center gap-2 rounded-full border border-ash/20 bg-paper/70 px-3 py-1 text-xs font-semibold normal-case tracking-normal text-ash dark:border-bone/15 dark:bg-zinc-900/70 dark:text-zinc-300"
+          >
+            <span
+              data-reading-status-dot
+              class="size-2 rounded-full bg-ash/50"
+              aria-hidden="true"
+            ></span>
+            <span data-reading-status-label>Progress saved</span>
           </span>
         </div>
       </div>
@@ -117,15 +143,151 @@ const pathwayId = data?.pathwayId ?? entry.slug;
 
   <BottomLayout>
     <div class="animate">
-      <article class="mt-6 border-t border-ember/20 pt-6 dark:border-ember/20">
+      <article
+        data-reading-progress-article={articleProgressKey}
+        class="mt-6 border-t border-ember/20 pt-6 dark:border-ember/20"
+      >
         {Content ? <Content /> : null}
       </article>
+      <div data-reading-progress-end={articleProgressKey}></div>
 
       {pathwayId && (
         <div class="mt-10 space-y-6">
           <FruitPathForestLinks pathwayId={pathwayId} />
         </div>
       )}
+
+      <!-- Production feedback integration omitted. -->
     </div>
   </BottomLayout>
+
+  <script is:inline define:vars={{ articleMeta, ARTICLE_PROGRESS_STORAGE_KEY }}>
+    (() => {
+      const article = document.querySelector(
+        `[data-reading-progress-article="${articleMeta.key}"]`,
+      );
+      const endMarker = document.querySelector(
+        `[data-reading-progress-end="${articleMeta.key}"]`,
+      );
+
+      const readProgressStore = () => {
+        try {
+          const raw = window.localStorage.getItem(ARTICLE_PROGRESS_STORAGE_KEY);
+          return raw ? JSON.parse(raw) : {};
+        } catch {
+          return {};
+        }
+      };
+
+      const writeProgressStore = (store) => {
+        try {
+          window.localStorage.setItem(
+            ARTICLE_PROGRESS_STORAGE_KEY,
+            JSON.stringify(store),
+          );
+        } catch {
+          // Progress is helpful but nonessential.
+        }
+      };
+
+      const updateReadingStatus = (record) => {
+        const badges = document.querySelectorAll(
+          `[data-reading-status="${articleMeta.key}"]`,
+        );
+
+        badges.forEach((badge) => {
+          const label = badge.querySelector("[data-reading-status-label]");
+          const dot = badge.querySelector("[data-reading-status-dot]");
+          const isComplete = Boolean(record?.completedAt);
+
+          badge.hidden = false;
+          badge.classList.add("inline-flex");
+          badge.classList.toggle("border-moss/35", isComplete);
+          badge.classList.toggle("bg-moss/10", isComplete);
+          badge.classList.toggle("text-moss", isComplete);
+          badge.classList.toggle("dark:text-moss", isComplete);
+
+          if (label) {
+            label.textContent = isComplete ? "Completed" : "In progress";
+          }
+
+          if (dot) {
+            dot.classList.toggle("bg-moss", isComplete);
+            dot.classList.toggle("bg-starlight", !isComplete);
+          }
+        });
+      };
+
+      const getScrollDepth = () => {
+        if (!article) return 0;
+
+        const rect = article.getBoundingClientRect();
+        const articleHeight = Math.max(article.scrollHeight, rect.height, 1);
+        const viewed = Math.min(
+          Math.max(window.innerHeight - rect.top, 0),
+          articleHeight,
+        );
+
+        return Math.max(0, Math.min(1, viewed / articleHeight));
+      };
+
+      const saveProgress = ({ complete = false } = {}) => {
+        const store = readProgressStore();
+        const existing = store[articleMeta.key] ?? {};
+        const now = new Date().toISOString();
+        const record = {
+          ...existing,
+          ...articleMeta,
+          lastVisitedAt: now,
+          maxScroll: Math.max(existing.maxScroll ?? 0, getScrollDepth()),
+          completedAt: complete ? existing.completedAt ?? now : existing.completedAt,
+        };
+
+        store[articleMeta.key] = record;
+        writeProgressStore(store);
+        updateReadingStatus(record);
+      };
+
+      if (article) {
+        saveProgress();
+
+        let ticking = false;
+        window.addEventListener(
+          "scroll",
+          () => {
+            if (ticking) return;
+            ticking = true;
+            window.requestAnimationFrame(() => {
+              saveProgress();
+              ticking = false;
+            });
+          },
+          { passive: true },
+        );
+
+        if (endMarker && "IntersectionObserver" in window) {
+          const observer = new IntersectionObserver(
+            (entries) => {
+              entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                  saveProgress({ complete: true });
+                  observer.disconnect();
+                }
+              });
+            },
+            { rootMargin: "0px 0px -12% 0px" },
+          );
+
+          observer.observe(endMarker);
+        }
+
+        window.addEventListener("pagehide", () => saveProgress());
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "hidden") {
+            saveProgress();
+          }
+        });
+      }
+    })();
+  </script>
 </PageLayout>

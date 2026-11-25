@@ -1,0 +1,25 @@
+---
+import { getCollection } from "astro:content";
+import PageLayout from "@layouts/PageLayout.astro";
+import TopLayout from "@layouts/TopLayout.astro";
+import BottomLayout from "@layouts/BottomLayout.astro";
+import ArrowCard from "@components/ArrowCard";
+import { toCardEntry } from "@lib/cardEntries";
+import { isPublished } from "@lib/publication";
+
+const entries = (await getCollection("bearings"))
+  .filter(isPublished)
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+const theology = entries.filter((entry) => entry.data.kind === "theology").map(toCardEntry);
+const worldview = entries.filter((entry) => entry.data.kind === "worldview").map(toCardEntry);
+const discernmentEntries = (await getCollection("foundations-of-discernment")).filter(isPublished);
+---
+<!-- Adapted case-study markup; production introductions and editorial links omitted. -->
+<PageLayout title="The Foundations">
+  <TopLayout><h1>The Foundations</h1></TopLayout>
+  <BottomLayout>
+    <section><h2>Biblical Theology &amp; Doctrine</h2>{theology.map((entry) => <ArrowCard entry={entry} />)}</section>
+    <section><h2>Worldview &amp; Philosophy</h2>{worldview.map((entry) => <ArrowCard entry={entry} />)}</section>
+    {discernmentEntries.length > 0 && <section><h2>Guided Studies</h2><a href="/foundations/foundations-of-discernment">Foundations of Discernment</a></section>}
+  </BottomLayout>
+</PageLayout>
